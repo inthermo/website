@@ -318,11 +318,45 @@ a {
     font-size: 1.15rem;
 }
 
+/* --- Coatings & Materials --- */
+.tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.tag {
+    display: inline-block;
+    background: #ffffff;
+    border: 1px solid #CBD5E0;
+    color: #2D3748;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 40px;
+}
+
+.materials-note {
+    font-size: 0.975rem;
+    color: #4A5568;
+    line-height: 1.7;
+    padding: 20px 24px;
+    background: #ffffff;
+    border-left: 3px solid #C41230;
+    border-radius: 0 6px 6px 0;
+    max-width: 680px;
+}
+
+.materials-note strong {
+    color: #1A202C;
+}
+
 /* --- Why Inthermo / Stats --- */
 .stat-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 48px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
     margin-top: 48px;
 }
 
@@ -449,6 +483,70 @@ a {
     color: #A0AEC0;
 }
 
+/* --- FAQ --- */
+.faq-wrap {
+    max-width: 760px;
+}
+
+.faq-list {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.faq-item {
+    background: #ffffff;
+    border: 1px solid #E2E8F0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.faq-item summary {
+    padding: 20px 24px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1A202C;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.faq-item summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item summary::after {
+    content: '+';
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: #C41230;
+    flex-shrink: 0;
+    margin-left: 16px;
+    transition: transform 0.2s;
+}
+
+.faq-item[open] summary::after {
+    transform: rotate(45deg);
+}
+
+.faq-item summary:hover {
+    background: #F7F8FA;
+}
+
+.faq-item p {
+    padding: 0 24px 20px;
+    font-size: 0.975rem;
+    line-height: 1.75;
+    color: #4A5568;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 16px;
+}
+
 /* --- Quote Form --- */
 .form-wrap {
     max-width: 720px;
@@ -572,8 +670,12 @@ a {
     }
 
     .stat-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 32px;
+    }
+
+    .tag-grid {
+        gap: 8px;
     }
 
     .steps {
@@ -591,6 +693,19 @@ a {
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .faq-item summary {
+        padding: 16px 18px;
+        font-size: 0.95rem;
+    }
+
+    .faq-item p {
+        padding: 14px 18px 18px;
     }
 
     .hero-actions {
