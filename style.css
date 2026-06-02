@@ -166,7 +166,9 @@ a {
 
 /* --- Hero --- */
 .hero {
-    background: #1C2A3A;
+    background:
+        linear-gradient(rgba(20, 32, 46, 0.82), rgba(20, 32, 46, 0.88)),
+        url('https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
     padding: 96px 0 88px;
     position: relative;
     overflow: hidden;
@@ -180,8 +182,8 @@ a {
         -45deg,
         transparent,
         transparent 40px,
-        rgba(255, 255, 255, 0.012) 40px,
-        rgba(255, 255, 255, 0.012) 41px
+        rgba(255, 255, 255, 0.008) 40px,
+        rgba(255, 255, 255, 0.008) 41px
     );
     pointer-events: none;
 }
@@ -280,7 +282,19 @@ a {
     transform: translateY(-3px);
 }
 
-.service-accent {
+.service-img {
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.service-img::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     height: 4px;
     background: #C41230;
 }
