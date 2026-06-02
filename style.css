@@ -30,9 +30,11 @@ h1, h2, h3 {
 }
 
 h1 {
-    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4.2rem);
     font-weight: 800;
-    letter-spacing: -0.02em;
+    font-style: italic;
+    letter-spacing: 0.01em;
 }
 
 h2 {
@@ -86,16 +88,16 @@ a {
 }
 
 .btn-primary {
-    background: #D4572A;
+    background: #C41230;
     color: #ffffff;
-    border-color: #D4572A;
+    border-color: #C41230;
 }
 
 .btn-primary:hover {
-    background: #B8461F;
-    border-color: #B8461F;
+    background: #9E0E25;
+    border-color: #9E0E25;
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(212, 87, 42, 0.35);
+    box-shadow: 0 4px 14px rgba(196, 18, 48, 0.35);
 }
 
 .btn-outline {
@@ -126,25 +128,40 @@ a {
 }
 
 .nav-logo {
-    font-size: 1.15rem;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: 1.5rem;
     font-weight: 800;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.04em;
     color: #1A202C;
 }
 
 .nav-logo span {
-    color: #D4572A;
+    color: #C41230;
+}
+
+/* Red banner logo treatment — matches truck decal */
+.nav-logo-wrap {
+    display: inline-block;
+    background: #C41230;
+    color: #ffffff;
+    padding: 4px 14px 4px 10px;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.02em;
 }
 
 .nav-phone {
     font-size: 1rem;
     font-weight: 600;
-    color: #D4572A;
+    color: #C41230;
     transition: color 0.2s;
 }
 
 .nav-phone:hover {
-    color: #B8461F;
+    color: #9E0E25;
 }
 
 /* --- Hero --- */
@@ -176,9 +193,9 @@ a {
 
 .hero-badge {
     display: inline-block;
-    background: rgba(212, 87, 42, 0.15);
+    background: rgba(196, 18, 48, 0.15);
     color: #E8855E;
-    border: 1px solid rgba(212, 87, 42, 0.3);
+    border: 1px solid rgba(196, 18, 48, 0.3);
     font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.07em;
@@ -191,6 +208,21 @@ a {
 .hero h1 {
     color: #ffffff;
     margin-bottom: 20px;
+}
+
+.hero-brand {
+    display: inline-block;
+    background: #C41230;
+    color: #ffffff;
+    padding: 2px 16px 4px 12px;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(2.8rem, 7vw, 5rem);
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+    line-height: 1.1;
 }
 
 .hero-sub {
@@ -250,7 +282,7 @@ a {
 
 .service-accent {
     height: 4px;
-    background: #D4572A;
+    background: #C41230;
 }
 
 .service-content {
@@ -263,8 +295,8 @@ a {
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: #D4572A;
-    background: rgba(212, 87, 42, 0.08);
+    color: #C41230;
+    background: rgba(196, 18, 48, 0.08);
     padding: 4px 10px;
     border-radius: 4px;
     margin-bottom: 14px;
@@ -287,7 +319,7 @@ a {
 .stat-number {
     font-size: 4rem;
     font-weight: 800;
-    color: #D4572A;
+    color: #C41230;
     line-height: 1;
     margin-bottom: 4px;
 }
@@ -328,7 +360,7 @@ a {
 .step-number {
     width: 44px;
     height: 44px;
-    background: #D4572A;
+    background: #C41230;
     color: #ffffff;
     font-size: 1.2rem;
     font-weight: 800;
@@ -425,12 +457,12 @@ a {
 }
 
 .phone-link {
-    color: #D4572A;
+    color: #C41230;
     font-weight: 600;
 }
 
 .phone-link:hover {
-    color: #B8461F;
+    color: #9E0E25;
     text-decoration: underline;
 }
 
@@ -474,8 +506,8 @@ a {
 .field input:focus,
 .field textarea:focus {
     outline: none;
-    border-color: #D4572A;
-    box-shadow: 0 0 0 3px rgba(212, 87, 42, 0.15);
+    border-color: #C41230;
+    box-shadow: 0 0 0 3px rgba(196, 18, 48, 0.15);
 }
 
 .field input::placeholder,
