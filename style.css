@@ -280,9 +280,16 @@ a {
 
 .service-img {
     height: 180px;
-    background-size: cover;
-    background-position: center;
+    overflow: hidden;
     position: relative;
+}
+
+.service-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
 }
 
 .service-img::after {
@@ -663,6 +670,9 @@ a {
 
     .hero {
         padding: 64px 0 56px;
+        background:
+            linear-gradient(rgba(20, 32, 46, 0.82), rgba(20, 32, 46, 0.88)),
+            url('https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?auto=format&fit=crop&w=768&q=60') center/cover no-repeat;
     }
 
     .service-grid {
