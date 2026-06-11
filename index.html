@@ -5,9 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Stripping &amp; Coating Removal — Lakeville, MN | Inthermo LLC</title>
     <meta name="description" content="30 years of burn-off oven and chemical stripping for powder coaters and OEMs. We strip powder coat, e-coat, epoxy, liquid paint, and high-temp coatings from hooks, racks, fixtures, and parts. Serving MN, WI, IA, ND, SD. Hook cleaning in 2 days. Lakeville, MN — right off I-35.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,700;1,800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Preload the fonts that paint above the fold: h1 (Barlow 800 italic) + body (Inter) -->
+    <link rel="preload" href="fonts/barlow-condensed-800-italic.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <!-- Preload the LCP hero background image (CSS url() is otherwise discovered late) -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?auto=format&fit=crop&w=1920&q=80" media="(min-width: 769px)" fetchpriority="high">
+    <link rel="preload" as="image" href="https://images.unsplash.com/photo-1496247749665-49cf5b1022e9?auto=format&fit=crop&w=768&q=60" media="(max-width: 768px)" fetchpriority="high">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
