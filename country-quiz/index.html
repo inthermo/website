@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Around the World — Country Quiz</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1 id="title" tabindex="0">🌍 Around the World</h1>
+  <div id="hud" class="hidden">
+    <span class="hud-item">Q <b id="hud-q">1</b>/<span id="hud-total">15</span></span>
+    <span class="hud-item">Score <b id="hud-score">0</b></span>
+    <span class="hud-item">Streak <b id="hud-streak">0</b></span>
+    <span class="hud-item">⏱ <b id="hud-time">0.0</b>s</span>
+    <button id="quit-btn" class="ghost small">Quit</button>
+  </div>
+</header>
+
+<main id="app">
+  <!-- HOME -->
+  <section id="home" class="screen">
+    <p class="tagline">Learn every country on Earth. Pick a level.</p>
+    <div class="levels">
+      <button class="level-card" data-level="1">
+        <span class="lvl-num">1</span>
+        <span class="lvl-name">Region · Multiple Choice</span>
+        <span class="lvl-desc">Pick continents. Highlighted country, 5 options.</span>
+        <span class="lvl-best" data-bestfor="1"></span>
+      </button>
+      <button class="level-card" data-level="2">
+        <span class="lvl-num">2</span>
+        <span class="lvl-name">Region · Free Type</span>
+        <span class="lvl-desc">Same regions, no options — type the name.</span>
+        <span class="lvl-best" data-bestfor="2"></span>
+      </button>
+      <button class="level-card" data-level="3">
+        <span class="lvl-num">3</span>
+        <span class="lvl-name">World · Multiple Choice</span>
+        <span class="lvl-desc">All countries, 5 options each.</span>
+        <span class="lvl-best" data-bestfor="3"></span>
+      </button>
+      <button class="level-card" data-level="4">
+        <span class="lvl-num">4</span>
+        <span class="lvl-name">World · Free Type</span>
+        <span class="lvl-desc">All countries, randomized, type the name.</span>
+        <span class="lvl-best" data-bestfor="4"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- REGION PICKER -->
+  <section id="picker" class="screen hidden">
+    <h2 id="picker-title">Choose your regions</h2>
+    <div class="continent-buttons" id="continent-buttons"></div>
+    <div class="map-wrap small-map"><svg id="picker-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="picker-actions">
+      <button id="picker-back" class="ghost">Back</button>
+      <button id="picker-start" class="primary" disabled>Start</button>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="screen hidden">
+    <div class="map-wrap"><svg id="quiz-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <p id="prompt" class="prompt">Which country is highlighted?</p>
+    <div id="options" class="options"></div>
+    <form id="free-form" class="free-form hidden" autocomplete="off">
+      <input id="free-input" type="text" placeholder="Type the country name…" autocapitalize="words" spellcheck="false">
+      <button type="submit" class="primary">Guess</button>
+      <button type="button" id="free-skip" class="ghost">Reveal</button>
+    </form>
+    <div id="reveal" class="reveal hidden"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="screen hidden">
+    <h2 id="results-head">Round Complete</h2>
+    <div id="results-body" class="results-grid"></div>
+    <div id="newhigh" class="newhigh hidden">🏆 New session high score!</div>
+    <div class="picker-actions">
+      <button id="results-home" class="ghost">Home</button>
+      <button id="results-again" class="primary">Play again</button>
+    </div>
+  </section>
+
+  <div id="loading" class="screen">Loading the world…</div>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
