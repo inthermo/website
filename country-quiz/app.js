@@ -85,7 +85,39 @@ function viewBoxTarget(c){
 }
 
 /* ---------- state ---------- */
-let S = null; // current game state
+// Frame "Find on map" to the region's core (5–95th pct of shape centroids, so one
+// sprawling member like Russia doesn't shrink everything) but always include the
+// target shape so the answer is on screen.
+function viewBoxFind(items, target){
+  const xs=[], ys=[];
+  items.forEach(it=>{ const [la,lo]=it.latlng; const [x,y]=proj(lo,la); xs.push(x); ys.push(y); });
+  xs.sort((a,b)=>a-b); ys.sort((a,b)=>a-b);
+  const q=(arr,p)=>arr[Math.min(arr.length-1,Math.max(0,Math.round(p*(arr.length-1))))];
+  let x0=q(xs,0.05), x1=q(xs,0.95), y0=q(ys,0.05), y1=q(ys,0.95);
+  const tf=DATA.geo[target.cca3];
+  // include the target's full outline only if it isn't a sprawling/overseas shape
+  // (e.g. France w/ overseas territories); otherwise its centroid keeps the frame tight
+  if(tf && (tf.bb[2]-tf.bb[0])<200 && (tf.bb[3]-tf.bb[1])<160){
+    x0=Math.min(x0,tf.bb[0]); y0=Math.min(y0,tf.bb[1]); x1=Math.max(x1,tf.bb[2]); y1=Math.max(y1,tf.bb[3]); }
+  const [tla,tlo]=target.latlng, [tx,ty]=proj(tlo,tla);
+  x0=Math.min(x0,tx); x1=Math.max(x1,tx); y0=Math.min(y0,ty); y1=Math.max(y1,ty);
+  let w=Math.max(x1-x0,40), h=Math.max(y1-y0,20); const px=w*0.08, py=h*0.08;
+  let x=x0-px, y=y0-py; w+=2*px; h+=2*py;
+  if(w/h<2){ const nw=h*2; x-=(nw-w)/2; w=nw; } else { const nh=w/2; y-=(nh-h)/2; h=nh; }
+  return [x,y,w,h].map(v=>v.toFixed(0)).join(' ');
+}
+
+// speak a name aloud (Web Speech API); the 🔊 buttons call this on tap
+function speak(t){
+  try{ if(!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=0.9;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+let mapTapHandler=null;          // set during "Find on map" rounds
+let S = null;                    // current game state
 
 function buildPool(opts){
   if(opts.section==='us') return US.items.slice();
@@ -125,38 +157,61 @@ function nextQuestion(){
   el('hud-q').textContent=S.idx+1;
   el('reveal').classList.add('hidden');
   el('prompt').classList.remove('hidden');
-  // map: full basemap for context, zoomed tight on the target shape (user can pinch/drag from here)
   const svg=el('quiz-map');
-  setBaseView(viewBoxTarget(c));
-  let inner = `<g>${DATA.basemap}</g>`;
-  if(DATA.geo[c.cca3]){
-    inner += `<path class="country target" d="${DATA.geo[c.cca3].d}"></path>`;
-  } else {
-    const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
-    inner += `<circle class="marker" cx="${mx}" cy="${my}" r="3"></circle>`;
-    inner += `<circle class="marker-ring" cx="${mx}" cy="${my}" r="3"></circle>`;
-  }
-  svg.innerHTML=inner;
+  mapTapHandler=null;
 
-  // question UI
-  if(S.mode==='mc'){
-    el('free-form').classList.add('hidden');
-    const opts=el('options'); opts.classList.remove('hidden');
-    const distractPool = S.opts.continents ? S.pool : DATA.items.filter(x=>x.continent===c.continent);
-    let distract=sample(distractPool,4,c);
-    while(distract.length<4){ const extra=sample(DATA.items,4,c).find(x=>x!==c&&!distract.includes(x)); if(!extra)break; distract.push(extra);}
-    const choices=[c,...distract];
-    for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
-    opts.innerHTML='';
-    choices.forEach(ch=>{
-      const b=document.createElement('button'); b.className='opt'; b.textContent=ch.name;
-      b.onclick=()=>answer(ch===c, b, choices, c); opts.appendChild(b);
-    });
-  } else {
+  if(S.mode==='find'){
+    // show the whole scope (don't reveal the target); user taps the named shape
     el('options').classList.add('hidden');
-    el('free-form').classList.remove('hidden');
-    const inp=el('free-input'); inp.value=''; inp.disabled=false; setTimeout(()=>inp.focus(),50);
-    el('free-skip').disabled=false;
+    el('free-form').classList.add('hidden');
+    setBaseView(viewBoxFind(S.pool, c));
+    svg.innerHTML=`<g>${DATA.basemap}</g>`;
+    el('prompt').innerHTML=`Find on the map: <b>${c.name}</b> `+
+      `<button type="button" class="speak" id="speak-btn" aria-label="Hear name">🔊</button>`;
+    el('speak-btn').onclick=()=>speak(c.name);
+    mapTapHandler=(cx,cy)=>{
+      if(S.answered) return;
+      const t=document.elementFromPoint(cx,cy);
+      const iso=t && t.getAttribute && t.getAttribute('data-c');
+      if(!iso) return;
+      const correct = iso===c.cca3;
+      const ce=svg.querySelector(`path[data-c="${c.cca3}"]`); if(ce) ce.classList.add('foundok');
+      if(!correct){ const we=svg.querySelector(`path[data-c="${iso}"]`); if(we) we.classList.add('foundbad'); }
+      answer(correct,null,null,c);
+    };
+  } else {
+    // highlight the target shape; ask for its name
+    el('prompt').textContent = S.mode==='mc' ? 'Which one is highlighted?' : 'Type the highlighted name.';
+    setBaseView(viewBoxTarget(c));
+    let inner = `<g>${DATA.basemap}</g>`;
+    if(DATA.geo[c.cca3]){
+      inner += `<path class="country target" d="${DATA.geo[c.cca3].d}"></path>`;
+    } else {
+      const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
+      inner += `<circle class="marker" cx="${mx}" cy="${my}" r="3"></circle>`;
+      inner += `<circle class="marker-ring" cx="${mx}" cy="${my}" r="3"></circle>`;
+    }
+    svg.innerHTML=inner;
+
+    if(S.mode==='mc'){
+      el('free-form').classList.add('hidden');
+      const opts=el('options'); opts.classList.remove('hidden');
+      const distractPool = S.opts.continents ? S.pool : DATA.items.filter(x=>x.continent===c.continent);
+      let distract=sample(distractPool,4,c);
+      while(distract.length<4){ const extra=sample(DATA.items,4,c).find(x=>x!==c&&!distract.includes(x)); if(!extra)break; distract.push(extra);}
+      const choices=[c,...distract];
+      for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
+      opts.innerHTML='';
+      choices.forEach(ch=>{
+        const b=document.createElement('button'); b.className='opt'; b.textContent=ch.name;
+        b.onclick=()=>answer(ch===c, b, choices, c); opts.appendChild(b);
+      });
+    } else {
+      el('options').classList.add('hidden');
+      el('free-form').classList.remove('hidden');
+      const inp=el('free-input'); inp.value=''; inp.disabled=false; setTimeout(()=>inp.focus(),50);
+      el('free-skip').disabled=false;
+    }
   }
   S.t0=performance.now();
   startTimer();
@@ -212,10 +267,11 @@ function reveal(correct, c){
   r.className='reveal '+(correct?'good':'miss');
   r.innerHTML=`<div class="verdict ${correct?'good':'miss'}">${correct?'✓ Correct':'✗ '+c.name}</div>
     ${c.flag?`<div class="flag">${c.flag}</div>`:''}
-    <div class="cname">${c.name}</div>
+    <div class="cname">${c.name} <button type="button" class="speak" id="speak-rv" aria-label="Hear name">🔊</button></div>
     <div class="facts">${facts.join('')}</div>
     <button class="primary next" id="next-btn">${S.idx+1>=S.total?'See results':'Next'} →</button>`;
   r.classList.remove('hidden');
+  el('speak-rv').onclick=()=>speak(c.name);
   el('next-btn').onclick=()=>{ S.idx++; nextQuestion(); };
   el('next-btn').focus();
 }
@@ -340,9 +396,11 @@ function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f
 (function setupZoom(){
   const svg=el('quiz-map');
   const pts=new Map(); let lastDist=0, lastMid=null, panLast=null;
+  let tapStart=null, tapMoved=0, tapEligible=false;
   svg.addEventListener('pointerdown',e=>{ svg.setPointerCapture(e.pointerId);
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
-    if(pts.size===1) panLast={x:e.clientX,y:e.clientY}; });
+    if(pts.size===1){ panLast={x:e.clientX,y:e.clientY}; tapStart={x:e.clientX,y:e.clientY}; tapMoved=0; tapEligible=true; }
+    else tapEligible=false; });
   svg.addEventListener('pointermove',e=>{
     if(!pts.has(e.pointerId)) return;
     pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -354,12 +412,17 @@ function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f
       if(lastMid) panBy(mid.x-lastMid.x, mid.y-lastMid.y);
       lastDist=dist; lastMid=mid; panLast=null;
     } else if(a.length===1 && panLast){
+      if(tapStart) tapMoved=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);
       panBy(e.clientX-panLast.x, e.clientY-panLast.y); panLast={x:e.clientX,y:e.clientY};
     }
   });
-  const up=e=>{ pts.delete(e.pointerId);
+  const up=e=>{
+    const wasLast = pts.size===1;
+    pts.delete(e.pointerId);
     if(pts.size<2){ lastDist=0; lastMid=null; }
-    panLast = pts.size===1 ? {x:[...pts.values()][0].x, y:[...pts.values()][0].y} : null; };
+    panLast = pts.size===1 ? {x:[...pts.values()][0].x, y:[...pts.values()][0].y} : null;
+    if(wasLast && tapEligible && tapMoved<8 && mapTapHandler) mapTapHandler(e.clientX,e.clientY);
+  };
   svg.addEventListener('pointerup',up); svg.addEventListener('pointercancel',up);
   svg.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.deltaY>0?1.12:0.88, e.clientX, e.clientY); },{passive:false});
   el('zoom-in').onclick=()=>zoomCenter(0.7);
@@ -368,7 +431,7 @@ function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f
 })();
 
 /* ---------- boot ---------- */
-const V='5';   // cache-buster; bump on each deploy
+const V='6';   // cache-buster; bump on each deploy
 async function boot(){
   show('loading');
   const [cs,gj,ss,ug]=await Promise.all([

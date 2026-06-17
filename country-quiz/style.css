@@ -58,6 +58,11 @@ h2{margin:.2em 0 .6em}
 .country.pick:hover{fill:var(--land-hover); cursor:pointer}
 .country.target{fill:var(--target); stroke:#7a241a; stroke-width:.8; animation:targetpulse 1.3s ease-in-out infinite}
 @keyframes targetpulse{0%,100%{fill:#e0533d}50%{fill:#f37a57}}
+.country.foundok{fill:var(--ok)!important; stroke:#0c5d3a; stroke-width:.9}
+.country.foundbad{fill:var(--bad)!important; stroke:#7a241a; stroke-width:.9}
+.speak{background:transparent; border:1px solid var(--line); border-radius:8px; padding:1px 8px;
+  cursor:pointer; font-size:15px; line-height:1.4; vertical-align:middle}
+.speak:hover{border-color:var(--acc)}
 .marker{fill:var(--target); stroke:#fff; stroke-width:1}
 .marker-ring{fill:none; stroke:var(--target); stroke-width:1.5; opacity:.8;
   animation:pulse 1.4s ease-out infinite}
