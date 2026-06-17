@@ -309,12 +309,30 @@ function finish(){
   el('lb-save-btn').disabled=false; el('lb-inline').innerHTML='';
   el('hud').classList.add('hidden');
   show('results');
+  fetchRemote().then(()=>{ if(pendingLB) renderInline(); });   // preview the shared board
 }
 
 /* ---------- leaderboard (local, per game type; 4 vectors) ---------- */
-let pendingLB=null;
+const LB_API='https://script.google.com/macros/s/AKfycbwvPcuDt9jGIX43PpN203wwHKxDaEdGq4SApMcdu1QyGh8iSZX93KC8O9nosoz29haKAQ/exec';
+let pendingLB=null, lbRemote={};
 function loadLB(){ try{return JSON.parse(localStorage.getItem('cq_lb')||'{}');}catch(e){return{};} }
 function saveLB(o){ localStorage.setItem('cq_lb',JSON.stringify(o)); }
+async function fetchRemote(){
+  try{ const r=await fetch(LB_API,{cache:'no-store'}); const j=await r.json(); if(j&&typeof j==='object'&&!j.error) lbRemote=j; }
+  catch(e){}
+  return lbRemote;
+}
+function postRemote(key, entry){
+  try{ return fetch(LB_API,{method:'POST',body:JSON.stringify(Object.assign({key},entry))}).catch(()=>{}); }
+  catch(e){ return Promise.resolve(); }
+}
+// merged view: shared (remote) + this device (local), deduped
+function boardFor(key){
+  const seen=new Set(), out=[];
+  const add=arr=>(arr||[]).forEach(e=>{ const sig=e.ts+'|'+e.name+'|'+e.score; if(!seen.has(sig)){ seen.add(sig); out.push(e); } });
+  add(lbRemote[key]); add(loadLB()[key]);
+  return out;
+}
 function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function friendlyLabel(key){
   const [sec,mode,scope]=key.split(':');
@@ -329,7 +347,7 @@ function addLBEntry(key, entry){
   lb[key]=arr.slice(0,25); saveLB(lb);
 }
 function renderLBTable(key, by){
-  const arr=(loadLB()[key]||[]).slice();
+  const arr=boardFor(key);
   arr.sort((a,b)=> by==='avg' ? (a.avg-b.avg) : (b[by]-a[by]));
   if(!arr.length) return '<p class="lb-empty">No entries yet — finish a round and add your name.</p>';
   const hc=k=>by===k?' class="hi"':'';
@@ -411,24 +429,30 @@ el('title').onclick=goHome;
 
 /* leaderboard wiring */
 let lbView={key:null, by:'score'};
+function renderInline(){
+  el('lb-inline').innerHTML='<h3 class="lb-h">'+esc(pendingLB.label)+' — shared leaderboard</h3>'+renderLBTable(pendingLB.key,'score');
+}
 el('lb-save-btn').onclick=()=>{
   if(!pendingLB) return;
   const name=(el('lb-name').value||'').trim().slice(0,16) || 'Anonymous';
-  addLBEntry(pendingLB.key, {name, score:pendingLB.score, streak:pendingLB.streak, acc:pendingLB.acc, avg:pendingLB.avg});
-  el('lb-save-btn').disabled=true;
-  el('lb-inline').innerHTML='<h3 class="lb-h">'+esc(pendingLB.label)+'</h3>'+renderLBTable(pendingLB.key,'score');
+  const entry={name, score:pendingLB.score, streak:pendingLB.streak, acc:pendingLB.acc, avg:pendingLB.avg, ts:Date.now()};
+  addLBEntry(pendingLB.key, entry);     // local first (instant)
+  el('lb-save-btn').disabled=true; renderInline();
+  postRemote(pendingLB.key, entry).then(()=>fetchRemote()).then(()=>{ if(pendingLB) renderInline(); });
 };
-function openLeaderboard(preferKey){
-  const lb=loadLB(); const keys=Object.keys(lb).filter(k=>lb[k]&&lb[k].length);
+async function openLeaderboard(preferKey){
+  show('leaderboard'); el('hud').classList.add('hidden');
+  el('lb-table').innerHTML='<p class="lb-empty">Loading…</p>';
+  await fetchRemote();
+  const keys=[...new Set([...Object.keys(lbRemote), ...Object.keys(loadLB())])].filter(k=>boardFor(k).length);
   const pick=el('lb-pick'); pick.innerHTML='';
-  if(!keys.length){ el('lb-table').innerHTML='<p class="lb-empty">No scores saved yet. Play a round and add your name on the results screen.</p>'; }
   keys.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=friendlyLabel(k); pick.appendChild(o); });
   lbView.key = (preferKey && keys.includes(preferKey)) ? preferKey : keys[0]||null;
   lbView.by='score';
   if(lbView.key) pick.value=lbView.key;
   document.querySelectorAll('#lb-sort button').forEach(b=>b.classList.toggle('on',b.dataset.by==='score'));
-  drawLB();
-  show('leaderboard'); el('hud').classList.add('hidden');
+  if(!keys.length) el('lb-table').innerHTML='<p class="lb-empty">No scores yet. Play a round and add your name on the results screen.</p>';
+  else drawLB();
 }
 function drawLB(){ el('lb-table').innerHTML = lbView.key ? renderLBTable(lbView.key, lbView.by) : el('lb-table').innerHTML; }
 el('open-lb').onclick=()=>openLeaderboard(null);
@@ -495,7 +519,7 @@ function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f
 })();
 
 /* ---------- boot ---------- */
-const V='7';   // cache-buster; bump on each deploy
+const V='8';   // cache-buster; bump on each deploy
 async function boot(){
   show('loading');
   const [cs,gj,ss,ug]=await Promise.all([
