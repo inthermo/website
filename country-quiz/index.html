@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Around the World — Country Quiz</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <header>
@@ -78,6 +78,8 @@
         <span class="lvl-best"></span>
       </button>
     </div>
+
+    <button id="open-lb" class="ghost lb-home">🏆 Leaderboards</button>
   </section>
 
   <!-- REGION PICKER -->
@@ -122,15 +124,34 @@
     <h2 id="results-head">Round Complete</h2>
     <div id="results-body" class="results-grid"></div>
     <div id="newhigh" class="newhigh hidden">🏆 New session high score!</div>
+    <div class="lb-save" id="lb-save">
+      <input id="lb-name" maxlength="16" placeholder="Proud of it? Enter your name…" autocapitalize="words" spellcheck="false">
+      <button id="lb-save-btn" class="primary">Add to leaderboard</button>
+    </div>
+    <div id="lb-inline"></div>
     <div class="picker-actions">
       <button id="results-home" class="ghost">Home</button>
       <button id="results-again" class="primary">Play again</button>
     </div>
   </section>
 
+  <!-- LEADERBOARD -->
+  <section id="leaderboard" class="screen hidden">
+    <h2>🏆 Leaderboards</h2>
+    <select id="lb-pick"></select>
+    <div class="lb-sort" id="lb-sort">
+      <button data-by="score" class="on">Score</button>
+      <button data-by="streak">Best Streak</button>
+      <button data-by="acc">Accuracy</button>
+      <button data-by="avg">Speed</button>
+    </div>
+    <div id="lb-table"></div>
+    <div class="picker-actions"><button id="lb-back" class="ghost">Back</button></div>
+  </section>
+
   <div id="loading" class="screen">Loading the world…</div>
 </main>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

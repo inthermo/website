@@ -302,8 +302,43 @@ function finish(){
     ['Avg time',avg.toFixed(1)+'s'],['Session best',Math.max(prev,S.score)]
   ].map(([k,v])=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('');
   el('newhigh').classList.toggle('hidden',!isHigh);
+  // prep leaderboard save for this round
+  pendingLB={ key, label:friendlyLabel(key),
+    score:S.score, streak:S.bestStreak, acc:Math.round(S.correct/S.total*100), avg:+avg.toFixed(1) };
+  el('lb-name').value=''; el('lb-save').classList.remove('hidden');
+  el('lb-save-btn').disabled=false; el('lb-inline').innerHTML='';
   el('hud').classList.add('hidden');
   show('results');
+}
+
+/* ---------- leaderboard (local, per game type; 4 vectors) ---------- */
+let pendingLB=null;
+function loadLB(){ try{return JSON.parse(localStorage.getItem('cq_lb')||'{}');}catch(e){return{};} }
+function saveLB(o){ localStorage.setItem('cq_lb',JSON.stringify(o)); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function friendlyLabel(key){
+  const [sec,mode,scope]=key.split(':');
+  const m={mc:'Multiple Choice',free:'Free Type',find:'Find on Map'}[mode]||mode;
+  if(sec==='us') return 'US States · '+m;
+  const s = scope==='all' ? 'World' : scope.replace(/\+/g,', ');
+  return s+' · '+m;
+}
+function addLBEntry(key, entry){
+  const lb=loadLB(); const arr=lb[key]||[];
+  arr.push(entry); arr.sort((a,b)=>b.score-a.score);
+  lb[key]=arr.slice(0,25); saveLB(lb);
+}
+function renderLBTable(key, by){
+  const arr=(loadLB()[key]||[]).slice();
+  arr.sort((a,b)=> by==='avg' ? (a.avg-b.avg) : (b[by]-a[by]));
+  if(!arr.length) return '<p class="lb-empty">No entries yet — finish a round and add your name.</p>';
+  const hc=k=>by===k?' class="hi"':'';
+  let h=`<table class="lb"><thead><tr><th>#</th><th>Name</th><th${hc('score')}>Score</th>`+
+    `<th${hc('streak')}>Streak</th><th${hc('acc')}>Acc</th><th${hc('avg')}>Time</th></tr></thead><tbody>`;
+  arr.slice(0,10).forEach((e,i)=>{ h+=`<tr><td>${i+1}</td><td>${esc(e.name)}</td>`+
+    `<td${hc('score')}>${e.score}</td><td${hc('streak')}>${e.streak}</td>`+
+    `<td${hc('acc')}>${e.acc}%</td><td${hc('avg')}>${e.avg}s</td></tr>`; });
+  return h+'</tbody></table>';
 }
 
 function refreshHomeBests(){
@@ -322,7 +357,7 @@ function refreshHomeBests(){
 }
 
 /* ---------- screens / nav ---------- */
-const SCREENS=['home','picker','quiz','results','loading'];
+const SCREENS=['home','picker','quiz','results','leaderboard','loading'];
 function show(id){ SCREENS.forEach(s=>el(s)&&el(s).classList.toggle('hidden',s!==id)); }
 
 let pickContinents=new Set(), pendingMode='mc';
@@ -373,6 +408,35 @@ el('quit-btn').onclick=goHome;
 el('results-home').onclick=goHome;
 el('results-again').onclick=()=>{ startGame(S.opts); };
 el('title').onclick=goHome;
+
+/* leaderboard wiring */
+let lbView={key:null, by:'score'};
+el('lb-save-btn').onclick=()=>{
+  if(!pendingLB) return;
+  const name=(el('lb-name').value||'').trim().slice(0,16) || 'Anonymous';
+  addLBEntry(pendingLB.key, {name, score:pendingLB.score, streak:pendingLB.streak, acc:pendingLB.acc, avg:pendingLB.avg});
+  el('lb-save-btn').disabled=true;
+  el('lb-inline').innerHTML='<h3 class="lb-h">'+esc(pendingLB.label)+'</h3>'+renderLBTable(pendingLB.key,'score');
+};
+function openLeaderboard(preferKey){
+  const lb=loadLB(); const keys=Object.keys(lb).filter(k=>lb[k]&&lb[k].length);
+  const pick=el('lb-pick'); pick.innerHTML='';
+  if(!keys.length){ el('lb-table').innerHTML='<p class="lb-empty">No scores saved yet. Play a round and add your name on the results screen.</p>'; }
+  keys.forEach(k=>{ const o=document.createElement('option'); o.value=k; o.textContent=friendlyLabel(k); pick.appendChild(o); });
+  lbView.key = (preferKey && keys.includes(preferKey)) ? preferKey : keys[0]||null;
+  lbView.by='score';
+  if(lbView.key) pick.value=lbView.key;
+  document.querySelectorAll('#lb-sort button').forEach(b=>b.classList.toggle('on',b.dataset.by==='score'));
+  drawLB();
+  show('leaderboard'); el('hud').classList.add('hidden');
+}
+function drawLB(){ el('lb-table').innerHTML = lbView.key ? renderLBTable(lbView.key, lbView.by) : el('lb-table').innerHTML; }
+el('open-lb').onclick=()=>openLeaderboard(null);
+el('lb-pick').onchange=e=>{ lbView.key=e.target.value; drawLB(); };
+document.querySelectorAll('#lb-sort button').forEach(b=>b.onclick=()=>{
+  lbView.by=b.dataset.by; document.querySelectorAll('#lb-sort button').forEach(x=>x.classList.toggle('on',x===b)); drawLB();
+});
+el('lb-back').onclick=goHome;
 
 /* ---------- map zoom + pan (pinch / drag / wheel / buttons) ---------- */
 let curVB=null, baseVB=null;
@@ -431,7 +495,7 @@ function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f
 })();
 
 /* ---------- boot ---------- */
-const V='6';   // cache-buster; bump on each deploy
+const V='7';   // cache-buster; bump on each deploy
 async function boot(){
   show('loading');
   const [cs,gj,ss,ug]=await Promise.all([

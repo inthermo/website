@@ -117,6 +117,28 @@ button.ghost:hover{border-color:var(--acc)}
 .stat .v{font-size:30px; font-weight:800}
 .stat .k{color:var(--mut); font-size:13px}
 .newhigh{text-align:center; color:var(--hi); font-weight:800; font-size:18px; margin:6px 0}
+
+/* leaderboard */
+.lb-home{display:block; width:100%; margin-top:22px; font-size:15px}
+.lb-save{display:flex; gap:10px; margin:14px 0 6px; flex-wrap:wrap}
+.lb-save input{flex:1; min-width:200px; padding:13px; border-radius:12px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-size:16px}
+.lb-save input:focus{outline:none; border-color:var(--acc)}
+.lb-h{margin:14px 0 6px; font-size:15px; color:var(--mut)}
+#lb-pick{width:100%; padding:12px; border-radius:12px; border:1px solid var(--line);
+  background:var(--panel); color:var(--ink); font-size:15px; font-weight:600; margin-bottom:12px}
+.lb-sort{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+.lb-sort button{flex:1; min-width:80px; padding:9px; border-radius:10px; border:1px solid var(--line);
+  background:var(--panel); color:var(--mut); font-weight:600; cursor:pointer}
+.lb-sort button.on{background:var(--acc); color:#fff; border-color:var(--acc)}
+table.lb{width:100%; border-collapse:collapse; font-size:14px}
+table.lb th,table.lb td{padding:9px 8px; text-align:right; border-bottom:1px solid var(--line)}
+table.lb th:nth-child(2),table.lb td:nth-child(2){text-align:left}
+table.lb th{color:var(--mut); font-weight:600; font-size:12px}
+table.lb td:first-child,table.lb th:first-child{text-align:center; color:var(--mut); width:28px}
+table.lb .hi{color:var(--acc); font-weight:800}
+table.lb tbody tr:first-child td{font-weight:700}
+.lb-empty{color:var(--mut); text-align:center; padding:24px}
 #loading{color:var(--mut); padding:40px; text-align:center}
 
 @media(max-width:560px){
