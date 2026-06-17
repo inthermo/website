@@ -145,11 +145,14 @@ function nextQuestion(){
   const svg=el('quiz-map');
   svg.setAttribute('viewBox', viewBoxTarget(c));
   let inner = `<g>${BASEMAP}</g>`;
-  // target
-  if(GEO[c.cca3]) inner += `<path class="country target" d="${GEO[c.cca3].d}"></path>`;
-  const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
-  if(!GEO[c.cca3]) inner += `<circle class="marker" cx="${mx}" cy="${my}" r="4"></circle>`;
-  inner += `<circle class="marker-ring" cx="${mx}" cy="${my}" r="4"></circle>`;
+  // target: fill the country's own shape; only tiny territories with no geometry get a marker
+  if(GEO[c.cca3]){
+    inner += `<path class="country target" d="${GEO[c.cca3].d}"></path>`;
+  } else {
+    const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
+    inner += `<circle class="marker" cx="${mx}" cy="${my}" r="3"></circle>`;
+    inner += `<circle class="marker-ring" cx="${mx}" cy="${my}" r="3"></circle>`;
+  }
   svg.innerHTML=inner;
 
   // question UI

@@ -47,7 +47,8 @@ h2{margin:.2em 0 .6em}
 .country{fill:var(--land); stroke:#0b1322; stroke-width:.5; transition:fill .15s}
 .country.sel{fill:var(--land-sel)}
 .country.pick:hover{fill:var(--acc); cursor:pointer}
-.country.target{fill:var(--target); stroke:#fff; stroke-width:1}
+.country.target{fill:var(--target); stroke:#fff; stroke-width:1; animation:targetpulse 1.3s ease-in-out infinite}
+@keyframes targetpulse{0%,100%{fill:#ff5a7a}50%{fill:#ff95ab}}
 .marker{fill:var(--target); stroke:#fff; stroke-width:1.5}
 .marker-ring{fill:none; stroke:var(--target); stroke-width:1.5; opacity:.8;
   animation:pulse 1.4s ease-out infinite}
