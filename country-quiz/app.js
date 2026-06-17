@@ -4,7 +4,8 @@
 const W = 1000, H = 500;                         // map viewBox base
 const ROUND = 15;                                // questions per session
 const CONT_COLORS = {                            // continent accent colors
-  Africa:'#f0a93b', Americas:'#4ad6c0', Asia:'#ff7a9c', Europe:'#7c9cff', Oceania:'#b78cff'
+  'North America':'#4ad6c0', 'South America':'#43c06a', Africa:'#f0a93b',
+  Europe:'#7c9cff', Asia:'#ff7a9c', Oceania:'#b78cff'
 };
 
 let COUNTRIES = [], BYISO = {}, GEO = null;
@@ -86,6 +87,24 @@ function viewBoxFor(isoList, pad=0.18){
   return `${x0.toFixed(0)} ${y0.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}`;
 }
 
+// Frame tightly on the target country: pad for neighbour context, but enforce a
+// minimum span so tiny countries (e.g. Bahamas) are clearly visible.
+function viewBoxTarget(c){
+  const f=GEO[c.cca3];
+  const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
+  let cx,cy,w,h;
+  if(f){
+    const bb=f.bb, bw=bb[2]-bb[0], bh=bb[3]-bb[1];
+    if(bw>260){ cx=mx; cy=my; w=260; h=130; }          // huge/antimeridian spread (US/Russia/Fiji): frame on centroid
+    else { cx=(bb[0]+bb[2])/2; cy=(bb[1]+bb[3])/2;
+           w=Math.max(bw*2.2,48); h=Math.max(bh*2.2,24); }
+  } else { cx=mx; cy=my; w=48; h=24; }                 // marker-only territory
+  if(w/h<2) w=h*2; else h=w/2;                          // match the ~2:1 svg box
+  return [cx-w/2, cy-h/2, w, h].map(v=>v.toFixed(0)).join(' ');
+}
+
+let BASEMAP='';   // cached gray world basemap (all geometry), built at boot
+
 /* ---------- state ---------- */
 let S = null; // current game state
 
@@ -122,13 +141,10 @@ function nextQuestion(){
   S.current=c;
   el('hud-q').textContent=S.idx+1;
   el('reveal').classList.add('hidden');
-  // map
+  // map: full gray world for context, zoomed tight on the target country
   const svg=el('quiz-map');
-  const scopeIsos = S.level<=2
-     ? COUNTRIES.filter(x=>S.continents.includes(x.continent)).map(x=>x.cca3)
-     : COUNTRIES.filter(x=>x.continent===c.continent).map(x=>x.cca3);
-  svg.setAttribute('viewBox', viewBoxFor([c.cca3].concat(S.level<=2?scopeIsos:[])));
-  let inner = `<g>${fmtPaths(scopeIsos)}</g>`;
+  svg.setAttribute('viewBox', viewBoxTarget(c));
+  let inner = `<g>${BASEMAP}</g>`;
   // target
   if(GEO[c.cca3]) inner += `<path class="country target" d="${GEO[c.cca3].d}"></path>`;
   const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
@@ -317,6 +333,7 @@ async function boot(){
   COUNTRIES=cs; COUNTRIES.forEach(c=>BYISO[c.cca3]=c);
   GEO={};
   gj.features.forEach(f=>{ GEO[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
+  BASEMAP=fmtPaths(Object.keys(GEO));
   refreshHomeBests();
   show('home');
 }

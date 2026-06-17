@@ -23,6 +23,11 @@ for c in mled:
         continue
     name = c['name']['common']
     cca3 = c['cca3']
+    subregion = c.get('subregion','') or region
+    # Split Americas: South America stays; North/Central America + Caribbean -> North America
+    continent = region
+    if region == 'Americas':
+        continent = 'South America' if subregion == 'South America' else 'North America'
     caps = c.get('capital') or []
     latlng = c.get('latlng') or [0,0]
     # population fuzzy
@@ -37,8 +42,8 @@ for c in mled:
         'name': name,
         'official': c['name'].get('official',''),
         'capital': caps[0] if caps else None,
-        'continent': region,
-        'subregion': c.get('subregion','') or region,
+        'continent': continent,
+        'subregion': subregion,
         'area': c.get('area'),
         'population': p,
         'flag': c.get('flag',''),
