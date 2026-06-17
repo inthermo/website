@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Around the World — Country Quiz</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <header>
@@ -21,12 +21,9 @@
 <main id="app">
   <!-- HOME -->
   <section id="home" class="screen">
-    <p class="tagline">Learn world countries and US states. Pick a section and level.</p>
-    <div class="sec-toggle">
-      <button class="sec-btn on" data-sec="world">🌍 World</button>
-      <button class="sec-btn" data-sec="us">🇺🇸 US States</button>
-    </div>
+    <p class="tagline">Learn world countries and US states. Pick a level.</p>
 
+    <h2 class="sec-head">🌍 Around the World</h2>
     <div class="levels" id="levels-world">
       <button class="level-card" data-section="world" data-mode="mc" data-scope="region">
         <span class="lvl-num">1</span>
@@ -54,7 +51,8 @@
       </button>
     </div>
 
-    <div class="levels hidden" id="levels-us">
+    <h2 class="sec-head">🇺🇸 United States</h2>
+    <div class="levels" id="levels-us">
       <button class="level-card" data-section="us" data-mode="mc">
         <span class="lvl-num">1</span>
         <span class="lvl-name">States · Multiple Choice</span>
@@ -85,7 +83,14 @@
   <section id="quiz" class="screen hidden">
     <div class="quiz-cols">
       <div class="quiz-left">
-        <div class="map-wrap"><svg id="quiz-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg></div>
+        <div class="map-wrap">
+          <svg id="quiz-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="zoom-ctl">
+            <button id="zoom-in" aria-label="Zoom in">+</button>
+            <button id="zoom-out" aria-label="Zoom out">−</button>
+            <button id="zoom-reset" aria-label="Reset view">⤢</button>
+          </div>
+        </div>
       </div>
       <div class="quiz-right">
         <p id="prompt" class="prompt">Which one is highlighted?</p>
@@ -114,6 +119,6 @@
   <div id="loading" class="screen">Loading the world…</div>
 </main>
 
-<script src="app.js"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

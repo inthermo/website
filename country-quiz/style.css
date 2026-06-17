@@ -1,15 +1,16 @@
 :root{
-  --bg:#0e1726; --panel:#16223a; --panel2:#1e2f4d; --line:#2c4063;
-  --ink:#e8eef7; --mut:#93a4c0; --acc:#3ea8ff; --acc2:#7c5cff;
-  --ok:#34d399; --bad:#f87171; --hi:#ffd24a;
-  /* traditional map palette */
-  --ocean:#a9d6ea; --land:#e7ddc4; --land-line:#b9ab86;
-  --land-sel:#8fc1e6; --land-hover:#f2cf63; --target:#e0533d;
+  /* light theme */
+  --bg:#eef2f7; --panel:#ffffff; --panel2:#f3f6fb; --line:#d8dfea;
+  --ink:#1e2a3a; --mut:#5e6c80; --acc:#2f80ed; --acc2:#7c5cff;
+  --ok:#1f9d63; --bad:#d6453f; --hi:#b07d12;
+  /* light map palette: pale blue water, soft green land */
+  --ocean:#cfe8f5; --land:#dcebcd; --land-line:#b3ccaa;
+  --land-sel:#9fd0ef; --land-hover:#f0d066; --target:#e0533d;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{
-  background:radial-gradient(1200px 600px at 70% -10%, #1b2a4a 0%, var(--bg) 60%);
+  background:var(--bg);
   color:var(--ink); font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   display:flex; flex-direction:column; min-height:100%;
 }
@@ -43,7 +44,12 @@ h2{margin:.2em 0 .6em}
 .cont-btn.on{background:var(--acc); border-color:var(--acc); color:#06121f}
 .cont-btn:hover{border-color:var(--acc)}
 
-.map-wrap{background:var(--ocean); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.map-wrap{position:relative; background:var(--ocean); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.zoom-ctl{position:absolute; right:10px; bottom:10px; display:flex; flex-direction:column; gap:6px}
+.zoom-ctl button{width:38px; height:38px; border-radius:10px; border:1px solid var(--line);
+  background:rgba(255,255,255,.92); color:var(--ink); font-size:20px; font-weight:700; line-height:1;
+  cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.18); display:flex; align-items:center; justify-content:center}
+.zoom-ctl button:active{background:var(--panel2)}
 .map-wrap.small-map svg{height:300px}
 .map-wrap svg{display:block; width:100%; height:360px; touch-action:none}
 .quiz-left .map-wrap svg{height:clamp(300px,54vh,540px)}
@@ -63,12 +69,9 @@ h2{margin:.2em 0 .6em}
 .quiz-right{min-width:0}
 @media(max-width:760px){ .quiz-cols{grid-template-columns:1fr} .quiz-left{position:static} }
 
-/* section toggle (World / US States) */
-.sec-toggle{display:inline-flex; gap:4px; background:var(--panel); border:1px solid var(--line);
-  border-radius:999px; padding:4px; margin-bottom:16px}
-.sec-btn{border:none; background:transparent; color:var(--mut); font-weight:700; font-size:14px;
-  padding:8px 18px; border-radius:999px; cursor:pointer}
-.sec-btn.on{background:var(--acc); color:#06121f}
+/* section headers (World / United States) */
+.sec-head{font-size:16px; margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line)}
+.sec-head:first-of-type{margin-top:6px}
 
 .prompt{font-size:18px; font-weight:600; margin:2px 0 14px; text-align:left}
 .options{display:grid; grid-template-columns:1fr; gap:10px}
@@ -76,8 +79,8 @@ h2{margin:.2em 0 .6em}
   color:var(--ink); cursor:pointer; font-size:15px; font-weight:600; transition:.12s}
 .opt:hover:not(:disabled){border-color:var(--acc); background:var(--panel2)}
 .opt:disabled{cursor:default}
-.opt.correct{background:rgba(52,211,153,.18); border-color:var(--ok); color:#c8f7e4}
-.opt.wrong{background:rgba(248,113,113,.16); border-color:var(--bad); color:#ffd6d6}
+.opt.correct{background:#e3f7ee; border-color:var(--ok); color:#0e6b45}
+.opt.wrong{background:#fde7e6; border-color:var(--bad); color:#a32d28}
 
 .free-form{display:flex; gap:10px; margin-top:4px; flex-wrap:wrap}
 .free-form input{flex:1; min-width:200px; padding:14px; border-radius:12px;

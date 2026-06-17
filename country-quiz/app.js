@@ -125,9 +125,9 @@ function nextQuestion(){
   el('hud-q').textContent=S.idx+1;
   el('reveal').classList.add('hidden');
   el('prompt').classList.remove('hidden');
-  // map: full basemap for context, zoomed tight on the target shape
+  // map: full basemap for context, zoomed tight on the target shape (user can pinch/drag from here)
   const svg=el('quiz-map');
-  svg.setAttribute('viewBox', viewBoxTarget(c));
+  setBaseView(viewBoxTarget(c));
   let inner = `<g>${DATA.basemap}</g>`;
   if(DATA.geo[c.cca3]){
     inner += `<path class="country target" d="${DATA.geo[c.cca3].d}"></path>`;
@@ -303,12 +303,6 @@ function renderPickerMap(){
 }
 
 /* ---------- wire up ---------- */
-document.querySelectorAll('.sec-btn').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.sec-btn').forEach(x=>x.classList.toggle('on',x===b));
-  const sec=b.dataset.sec;
-  el('levels-world').classList.toggle('hidden',sec!=='world');
-  el('levels-us').classList.toggle('hidden',sec!=='us');
-});
 document.querySelectorAll('.level-card').forEach(card=>{
   card.onclick=()=>{
     const {section,mode,scope}=card.dataset;
@@ -324,17 +318,69 @@ el('results-home').onclick=goHome;
 el('results-again').onclick=()=>{ startGame(S.opts); };
 el('title').onclick=goHome;
 
+/* ---------- map zoom + pan (pinch / drag / wheel / buttons) ---------- */
+let curVB=null, baseVB=null;
+function setVB(x,y,w,h){ curVB={x,y,w,h}; el('quiz-map').setAttribute('viewBox',`${x} ${y} ${w} ${h}`); }
+function setBaseView(str){ const [x,y,w,h]=str.split(' ').map(Number); baseVB={x,y,w,h}; setVB(x,y,w,h); }
+function zoomAt(f, cx, cy){
+  if(!curVB) return;
+  const rect=el('quiz-map').getBoundingClientRect();
+  const fx=curVB.x+(cx-rect.left)/rect.width*curVB.w;
+  const fy=curVB.y+(cy-rect.top)/rect.height*curVB.h;
+  let nw=curVB.w*f;
+  if(nw<12) f=12/curVB.w; if(nw>2400) f=2400/curVB.w;   // clamp zoom range
+  setVB(fx-(fx-curVB.x)*f, fy-(fy-curVB.y)*f, curVB.w*f, curVB.h*f);
+}
+function panBy(dxC,dyC){
+  if(!curVB) return;
+  const rect=el('quiz-map').getBoundingClientRect();
+  setVB(curVB.x-dxC/rect.width*curVB.w, curVB.y-dyC/rect.height*curVB.h, curVB.w, curVB.h);
+}
+function zoomCenter(f){ const r=el('quiz-map').getBoundingClientRect(); zoomAt(f, r.left+r.width/2, r.top+r.height/2); }
+(function setupZoom(){
+  const svg=el('quiz-map');
+  const pts=new Map(); let lastDist=0, lastMid=null, panLast=null;
+  svg.addEventListener('pointerdown',e=>{ svg.setPointerCapture(e.pointerId);
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1) panLast={x:e.clientX,y:e.clientY}; });
+  svg.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const a=[...pts.values()];
+    if(a.length>=2){
+      const dist=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      const mid={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};
+      if(lastDist) zoomAt(lastDist/dist, mid.x, mid.y);
+      if(lastMid) panBy(mid.x-lastMid.x, mid.y-lastMid.y);
+      lastDist=dist; lastMid=mid; panLast=null;
+    } else if(a.length===1 && panLast){
+      panBy(e.clientX-panLast.x, e.clientY-panLast.y); panLast={x:e.clientX,y:e.clientY};
+    }
+  });
+  const up=e=>{ pts.delete(e.pointerId);
+    if(pts.size<2){ lastDist=0; lastMid=null; }
+    panLast = pts.size===1 ? {x:[...pts.values()][0].x, y:[...pts.values()][0].y} : null; };
+  svg.addEventListener('pointerup',up); svg.addEventListener('pointercancel',up);
+  svg.addEventListener('wheel',e=>{ e.preventDefault(); zoomAt(e.deltaY>0?1.12:0.88, e.clientX, e.clientY); },{passive:false});
+  el('zoom-in').onclick=()=>zoomCenter(0.7);
+  el('zoom-out').onclick=()=>zoomCenter(1.4);
+  el('zoom-reset').onclick=()=>{ if(baseVB) setVB(baseVB.x,baseVB.y,baseVB.w,baseVB.h); };
+})();
+
 /* ---------- boot ---------- */
+const V='5';   // cache-buster; bump on each deploy
 async function boot(){
   show('loading');
   const [cs,gj,ss,ug]=await Promise.all([
-    fetch('countries.json').then(r=>r.json()),
-    fetch('geo.json').then(r=>r.json()),
-    fetch('states.json').then(r=>r.json()),
-    fetch('usgeo.json').then(r=>r.json())
+    fetch('countries.json?v='+V).then(r=>r.json()),
+    fetch('geo.json?v='+V).then(r=>r.json()),
+    fetch('states.json?v='+V).then(r=>r.json()),
+    fetch('usgeo.json?v='+V).then(r=>r.json())
   ]);
-  WORLD.items=cs; WORLD.geo={};
+  WORLD.geo={};
   gj.features.forEach(f=>{ WORLD.geo[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
+  // only quiz countries that have a real outline — so the target is always a filled shape, never a dot
+  WORLD.items=cs.filter(c=>WORLD.geo[c.cca3]);
   WORLD.basemap=fmtPaths(Object.keys(WORLD.geo),WORLD.geo);
   US.items=ss; US.geo={};
   ug.features.forEach(f=>{ US.geo[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
