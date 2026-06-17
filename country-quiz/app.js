@@ -1,15 +1,17 @@
 'use strict';
-/* Around the World — country quiz. Vanilla JS, no deps. */
+/* Around the World — geography quiz. Vanilla JS, no deps.
+   Two datasets (World countries, US states) share one quiz engine via DATA. */
 
 const W = 1000, H = 500;                         // map viewBox base
 const ROUND = 15;                                // questions per session
-const CONT_COLORS = {                            // continent accent colors
+const CONT_COLORS = {                            // continent accent colors (region picker)
   'North America':'#4ad6c0', 'South America':'#43c06a', Africa:'#f0a93b',
   Europe:'#7c9cff', Asia:'#ff7a9c', Oceania:'#b78cff'
 };
 
-let COUNTRIES = [], BYISO = {}, GEO = null;
-const $ = s => document.querySelector(s);
+let WORLD = {items:[], geo:{}, basemap:''};
+let US    = {items:[], geo:{}, basemap:''};
+let DATA  = WORLD;                               // active dataset for the current game
 const el = id => document.getElementById(id);
 
 /* ---------- geo projection + path building ---------- */
@@ -61,41 +63,20 @@ function freeMatch(input, c){
 }
 
 /* ---------- map rendering ---------- */
-function fmtPaths(isoList){
-  // returns SVG path markup for given isos that have geometry
+function fmtPaths(isoList, geo){
   let s='';
-  isoList.forEach(iso=>{ const f=GEO[iso]; if(f) s+=`<path class="country" data-c="${iso}" d="${f.d}"></path>`; });
+  isoList.forEach(iso=>{ const f=geo[iso]; if(f) s+=`<path class="country" data-c="${iso}" d="${f.d}"></path>`; });
   return s;
 }
-function bboxOf(isoList){
-  let a=[Infinity,Infinity,-Infinity,-Infinity], any=false;
-  isoList.forEach(iso=>{
-    const f=GEO[iso];
-    if(f){any=true; a[0]=Math.min(a[0],f.bb[0]);a[1]=Math.min(a[1],f.bb[1]);
-      a[2]=Math.max(a[2],f.bb[2]);a[3]=Math.max(a[3],f.bb[3]);}
-    else{ const c=BYISO[iso]; if(c){const[lat,lon]=c.latlng;const[x,y]=proj(lon,lat);
-      any=true; a[0]=Math.min(a[0],x);a[1]=Math.min(a[1],y);a[2]=Math.max(a[2],x);a[3]=Math.max(a[3],y);}}
-  });
-  return any?a:[0,0,W,H];
-}
-function viewBoxFor(isoList, pad=0.18){
-  let [x0,y0,x1,y1]=bboxOf(isoList);
-  let w=Math.max(x1-x0,12), h=Math.max(y1-y0,12);
-  x0-=w*pad; y0-=h*pad; w*=(1+2*pad); h*=(1+2*pad);
-  // keep ~2:1 aspect to match svg box
-  const target=2; if(w/h<target){const nw=h*target; x0-=(nw-w)/2; w=nw;} else {const nh=w/target; y0-=(nh-h)/2; h=nh;}
-  return `${x0.toFixed(0)} ${y0.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}`;
-}
-
-// Frame tightly on the target country: pad for neighbour context, but enforce a
-// minimum span so tiny countries (e.g. Bahamas) are clearly visible.
+// Frame tightly on the target shape: pad for neighbour context, but enforce a
+// minimum span so tiny countries/states are clearly visible.
 function viewBoxTarget(c){
-  const f=GEO[c.cca3];
+  const f=DATA.geo[c.cca3];
   const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
   let cx,cy,w,h;
   if(f){
     const bb=f.bb, bw=bb[2]-bb[0], bh=bb[3]-bb[1];
-    if(bw>260){ cx=mx; cy=my; w=260; h=130; }          // huge/antimeridian spread (US/Russia/Fiji): frame on centroid
+    if(bw>260){ cx=mx; cy=my; w=260; h=130; }          // huge/antimeridian spread (US/Russia/AK): frame on centroid
     else { cx=(bb[0]+bb[2])/2; cy=(bb[1]+bb[3])/2;
            w=Math.max(bw*2.2,84); h=Math.max(bh*2.2,42); }
   } else { cx=mx; cy=my; w=84; h=42; }                 // marker-only territory
@@ -103,36 +84,38 @@ function viewBoxTarget(c){
   return [cx-w/2, cy-h/2, w, h].map(v=>v.toFixed(0)).join(' ');
 }
 
-let BASEMAP='';   // cached gray world basemap (all geometry), built at boot
-
 /* ---------- state ---------- */
 let S = null; // current game state
 
-function buildPool(level, continents){
-  let pool;
-  if(level<=2) pool = COUNTRIES.filter(c=>continents.includes(c.continent));
-  else pool = COUNTRIES.slice();
-  return pool;
+function buildPool(opts){
+  if(opts.section==='us') return US.items.slice();
+  if(opts.continents) return WORLD.items.filter(c=>opts.continents.includes(c.continent));
+  return WORLD.items.slice();
 }
 function sample(arr,n,exclude){
-  const out=[], used=new Set(exclude?[exclude]:[]);
-  const pool=arr.filter(x=>!used.has(x));
+  const used=new Set(exclude?[exclude]:[]);
+  const pool=arr.filter(x=>!used.has(x)), out=[];
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   for(const x of pool){ if(out.length>=n) break; out.push(x);} return out;
 }
 
-function startGame(level, continents){
-  const pool=buildPool(level,continents);
+function startGame(opts){
+  DATA = opts.section==='us' ? US : WORLD;
+  const pool=buildPool(opts);
   const total=Math.min(ROUND, pool.length);
   const order=sample(pool, total);
-  S={level,continents,mode:(level%2===0)?'free':'mc',scope:(level<=2?continents:null),
-     pool,order,idx:0,total,score:0,correct:0,streak:0,bestStreak:0,times:[],t0:0,answered:false};
+  S={opts,mode:opts.mode,pool,order,idx:0,total,score:0,correct:0,streak:0,bestStreak:0,times:[],t0:0,answered:false};
   show('quiz'); el('hud').classList.remove('hidden');
   el('hud-total').textContent=total;
   nextQuestion();
 }
 
-function scopeKey(){ return S.level<=2 ? [...S.continents].sort().join('+') : 'all'; }
+function scopeKey(){
+  const o=S.opts;
+  if(o.section==='us') return 'us:'+o.mode+':all';
+  if(o.continents) return 'world:'+o.mode+':'+[...o.continents].sort().join('+');
+  return 'world:'+o.mode+':all';
+}
 
 function nextQuestion(){
   if(S.idx>=S.total) return finish();
@@ -141,13 +124,13 @@ function nextQuestion(){
   S.current=c;
   el('hud-q').textContent=S.idx+1;
   el('reveal').classList.add('hidden');
-  // map: full gray world for context, zoomed tight on the target country
+  el('prompt').classList.remove('hidden');
+  // map: full basemap for context, zoomed tight on the target shape
   const svg=el('quiz-map');
   svg.setAttribute('viewBox', viewBoxTarget(c));
-  let inner = `<g>${BASEMAP}</g>`;
-  // target: fill the country's own shape; only tiny territories with no geometry get a marker
-  if(GEO[c.cca3]){
-    inner += `<path class="country target" d="${GEO[c.cca3].d}"></path>`;
+  let inner = `<g>${DATA.basemap}</g>`;
+  if(DATA.geo[c.cca3]){
+    inner += `<path class="country target" d="${DATA.geo[c.cca3].d}"></path>`;
   } else {
     const [lat,lon]=c.latlng, [mx,my]=proj(lon,lat);
     inner += `<circle class="marker" cx="${mx}" cy="${my}" r="3"></circle>`;
@@ -159,9 +142,9 @@ function nextQuestion(){
   if(S.mode==='mc'){
     el('free-form').classList.add('hidden');
     const opts=el('options'); opts.classList.remove('hidden');
-    const distractPool = (S.level<=2?S.pool:COUNTRIES.filter(x=>x.continent===c.continent));
+    const distractPool = S.opts.continents ? S.pool : DATA.items.filter(x=>x.continent===c.continent);
     let distract=sample(distractPool,4,c);
-    while(distract.length<4){ const extra=sample(COUNTRIES,4,c).find(x=>x!==c&&!distract.includes(x)); if(!extra)break; distract.push(extra);}
+    while(distract.length<4){ const extra=sample(DATA.items,4,c).find(x=>x!==c&&!distract.includes(x)); if(!extra)break; distract.push(extra);}
     const choices=[c,...distract];
     for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]];}
     opts.innerHTML='';
@@ -216,9 +199,11 @@ function answer(correct, btn, choices, c){
 function reveal(correct, c){
   el('options').classList.add('hidden');
   el('free-form').classList.add('hidden');
+  el('prompt').classList.add('hidden');
   const facts=[];
   if(c.capital) facts.push(`<b>Capital:</b> ${c.capital}`);
   facts.push(`<b>Region:</b> ${c.subregion}, ${c.continent}`);
+  if(c.abbr) facts.push(`<b>Abbreviation:</b> ${c.abbr}`);
   if(c.population) facts.push(`<b>Population:</b> ${c.population.toLocaleString()}`);
   if(c.area) facts.push(`<b>Area:</b> ${Math.round(c.area).toLocaleString()} km²`);
   if(c.languages&&c.languages.length) facts.push(`<b>Languages:</b> ${c.languages.slice(0,3).join(', ')}`);
@@ -226,7 +211,7 @@ function reveal(correct, c){
   const r=el('reveal');
   r.className='reveal '+(correct?'good':'miss');
   r.innerHTML=`<div class="verdict ${correct?'good':'miss'}">${correct?'✓ Correct':'✗ '+c.name}</div>
-    <div class="flag">${c.flag||'🏳️'}</div>
+    ${c.flag?`<div class="flag">${c.flag}</div>`:''}
     <div class="cname">${c.name}</div>
     <div class="facts">${facts.join('')}</div>
     <button class="primary next" id="next-btn">${S.idx+1>=S.total?'See results':'Next'} →</button>`;
@@ -250,10 +235,10 @@ function loadHS(){ try{return JSON.parse(localStorage.getItem('cq_hs')||'{}');}c
 function saveHS(h){ localStorage.setItem('cq_hs',JSON.stringify(h)); }
 function finish(){
   cancelAnimationFrame(timerRAF);
-  const key='L'+S.level+'_'+scopeKey();
+  const key=scopeKey();
   const hs=loadHS(); const prev=hs[key]&&hs[key].score||0;
   const isHigh=S.score>prev;
-  if(isHigh){ hs[key]={score:S.score,acc:Math.round(S.correct/S.total*100),date:todayStr()}; saveHS(hs); }
+  if(isHigh){ hs[key]={score:S.score,acc:Math.round(S.correct/S.total*100)}; saveHS(hs); }
   const avg=S.times.length?(S.times.reduce((a,b)=>a+b,0)/S.times.length/1000):0;
   el('results-body').innerHTML=[
     ['Score',S.score],['Accuracy',Math.round(S.correct/S.total*100)+'%'],
@@ -264,15 +249,19 @@ function finish(){
   el('hud').classList.add('hidden');
   show('results');
 }
-function todayStr(){ const d=new Date(); return (d.getMonth()+1)+'/'+d.getDate(); }
 
 function refreshHomeBests(){
   const hs=loadHS();
-  document.querySelectorAll('.lvl-best').forEach(span=>{
-    const lv=span.dataset.bestfor;
-    let best=0,scope='';
-    Object.keys(hs).forEach(k=>{ if(k.startsWith('L'+lv+'_')&&hs[k].score>best){best=hs[k].score;scope=k;} });
-    span.textContent= best? ('Best '+best) : '';
+  document.querySelectorAll('.level-card').forEach(card=>{
+    const sec=card.dataset.section, mode=card.dataset.mode, scope=card.dataset.scope||'all';
+    let best=0;
+    Object.keys(hs).forEach(k=>{
+      const p=k.split(':'); if(p[0]!==sec||p[1]!==mode) return;
+      const isAll=p[2]==='all';
+      if(scope==='region' ? !isAll : isAll) best=Math.max(best,hs[k].score||0);
+    });
+    const span=card.querySelector('.lvl-best');
+    if(span) span.textContent= best?('Best '+best):'';
   });
 }
 
@@ -280,12 +269,11 @@ function refreshHomeBests(){
 const SCREENS=['home','picker','quiz','results','loading'];
 function show(id){ SCREENS.forEach(s=>el(s)&&el(s).classList.toggle('hidden',s!==id)); }
 
-let pickContinents=new Set(), pendingLevel=1;
-function openPicker(level){
-  pendingLevel=level; pickContinents=new Set();
-  el('picker-title').textContent='Level '+level+' — choose one or more regions';
+let pickContinents=new Set(), pendingMode='mc';
+function openPicker(mode){
+  pendingMode=mode; pickContinents=new Set();
+  el('picker-title').textContent='Choose one or more regions';
   show('picker'); el('hud').classList.add('hidden');
-  // continent buttons
   const cb=el('continent-buttons'); cb.innerHTML='';
   Object.keys(CONT_COLORS).forEach(name=>{
     const b=document.createElement('button'); b.className='cont-btn'; b.dataset.cont=name;
@@ -304,7 +292,7 @@ function toggleCont(name,btn){
 function renderPickerMap(){
   const svg=el('picker-map'); svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
   let s='';
-  COUNTRIES.forEach(c=>{ const f=GEO[c.cca3]; if(!f)return;
+  WORLD.items.forEach(c=>{ const f=WORLD.geo[c.cca3]; if(!f)return;
     const on=pickContinents.has(c.continent);
     s+=`<path class="country pick ${on?'sel':''}" data-cont="${c.continent}" d="${f.d}"></path>`;});
   svg.innerHTML=s;
@@ -315,28 +303,43 @@ function renderPickerMap(){
 }
 
 /* ---------- wire up ---------- */
+document.querySelectorAll('.sec-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.sec-btn').forEach(x=>x.classList.toggle('on',x===b));
+  const sec=b.dataset.sec;
+  el('levels-world').classList.toggle('hidden',sec!=='world');
+  el('levels-us').classList.toggle('hidden',sec!=='us');
+});
 document.querySelectorAll('.level-card').forEach(card=>{
-  card.onclick=()=>{ const lv=+card.dataset.level;
-    if(lv<=2) openPicker(lv); else startGame(lv,null); };
+  card.onclick=()=>{
+    const {section,mode,scope}=card.dataset;
+    if(scope==='region') openPicker(mode);
+    else startGame({section,mode,continents:null});
+  };
 });
 el('picker-back').onclick=()=>{ show('home'); refreshHomeBests(); };
-el('picker-start').onclick=()=>{ if(pickContinents.size) startGame(pendingLevel,[...pickContinents]); };
-el('quit-btn').onclick=()=>{ cancelAnimationFrame(timerRAF); el('hud').classList.add('hidden'); show('home'); refreshHomeBests(); };
-el('results-home').onclick=()=>{ show('home'); refreshHomeBests(); };
-el('results-again').onclick=()=>{ startGame(S.level,S.continents); };
-el('title').onclick=()=>{ cancelAnimationFrame(timerRAF); el('hud').classList.add('hidden'); show('home'); refreshHomeBests(); };
+el('picker-start').onclick=()=>{ if(pickContinents.size) startGame({section:'world',mode:pendingMode,continents:[...pickContinents]}); };
+const goHome=()=>{ cancelAnimationFrame(timerRAF); el('hud').classList.add('hidden'); show('home'); refreshHomeBests(); };
+el('quit-btn').onclick=goHome;
+el('results-home').onclick=goHome;
+el('results-again').onclick=()=>{ startGame(S.opts); };
+el('title').onclick=goHome;
 
 /* ---------- boot ---------- */
 async function boot(){
   show('loading');
-  const [cs,gj]=await Promise.all([
+  const [cs,gj,ss,ug]=await Promise.all([
     fetch('countries.json').then(r=>r.json()),
-    fetch('geo.json').then(r=>r.json())
+    fetch('geo.json').then(r=>r.json()),
+    fetch('states.json').then(r=>r.json()),
+    fetch('usgeo.json').then(r=>r.json())
   ]);
-  COUNTRIES=cs; COUNTRIES.forEach(c=>BYISO[c.cca3]=c);
-  GEO={};
-  gj.features.forEach(f=>{ GEO[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
-  BASEMAP=fmtPaths(Object.keys(GEO));
+  WORLD.items=cs; WORLD.geo={};
+  gj.features.forEach(f=>{ WORLD.geo[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
+  WORLD.basemap=fmtPaths(Object.keys(WORLD.geo),WORLD.geo);
+  US.items=ss; US.geo={};
+  ug.features.forEach(f=>{ US.geo[f.properties.cca3]={d:geomPath(f.geometry),bb:geomBBox(f.geometry)}; });
+  US.basemap=fmtPaths(Object.keys(US.geo),US.geo);
+  DATA=WORLD;
   refreshHomeBests();
   show('home');
 }

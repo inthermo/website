@@ -21,31 +21,51 @@
 <main id="app">
   <!-- HOME -->
   <section id="home" class="screen">
-    <p class="tagline">Learn every country on Earth. Pick a level.</p>
-    <div class="levels">
-      <button class="level-card" data-level="1">
+    <p class="tagline">Learn world countries and US states. Pick a section and level.</p>
+    <div class="sec-toggle">
+      <button class="sec-btn on" data-sec="world">🌍 World</button>
+      <button class="sec-btn" data-sec="us">🇺🇸 US States</button>
+    </div>
+
+    <div class="levels" id="levels-world">
+      <button class="level-card" data-section="world" data-mode="mc" data-scope="region">
         <span class="lvl-num">1</span>
         <span class="lvl-name">Region · Multiple Choice</span>
         <span class="lvl-desc">Pick continents. Highlighted country, 5 options.</span>
-        <span class="lvl-best" data-bestfor="1"></span>
+        <span class="lvl-best"></span>
       </button>
-      <button class="level-card" data-level="2">
+      <button class="level-card" data-section="world" data-mode="free" data-scope="region">
         <span class="lvl-num">2</span>
         <span class="lvl-name">Region · Free Type</span>
         <span class="lvl-desc">Same regions, no options — type the name.</span>
-        <span class="lvl-best" data-bestfor="2"></span>
+        <span class="lvl-best"></span>
       </button>
-      <button class="level-card" data-level="3">
+      <button class="level-card" data-section="world" data-mode="mc" data-scope="all">
         <span class="lvl-num">3</span>
         <span class="lvl-name">World · Multiple Choice</span>
         <span class="lvl-desc">All countries, 5 options each.</span>
-        <span class="lvl-best" data-bestfor="3"></span>
+        <span class="lvl-best"></span>
       </button>
-      <button class="level-card" data-level="4">
+      <button class="level-card" data-section="world" data-mode="free" data-scope="all">
         <span class="lvl-num">4</span>
         <span class="lvl-name">World · Free Type</span>
         <span class="lvl-desc">All countries, randomized, type the name.</span>
-        <span class="lvl-best" data-bestfor="4"></span>
+        <span class="lvl-best"></span>
+      </button>
+    </div>
+
+    <div class="levels hidden" id="levels-us">
+      <button class="level-card" data-section="us" data-mode="mc">
+        <span class="lvl-num">1</span>
+        <span class="lvl-name">States · Multiple Choice</span>
+        <span class="lvl-desc">Highlighted state, 5 options. All 50 states.</span>
+        <span class="lvl-best"></span>
+      </button>
+      <button class="level-card" data-section="us" data-mode="free">
+        <span class="lvl-num">2</span>
+        <span class="lvl-name">States · Free Type</span>
+        <span class="lvl-desc">Type the state name. All 50, randomized.</span>
+        <span class="lvl-best"></span>
       </button>
     </div>
   </section>
@@ -63,15 +83,21 @@
 
   <!-- QUIZ -->
   <section id="quiz" class="screen hidden">
-    <div class="map-wrap"><svg id="quiz-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg></div>
-    <p id="prompt" class="prompt">Which country is highlighted?</p>
-    <div id="options" class="options"></div>
-    <form id="free-form" class="free-form hidden" autocomplete="off">
-      <input id="free-input" type="text" placeholder="Type the country name…" autocapitalize="words" spellcheck="false">
-      <button type="submit" class="primary">Guess</button>
-      <button type="button" id="free-skip" class="ghost">Reveal</button>
-    </form>
-    <div id="reveal" class="reveal hidden"></div>
+    <div class="quiz-cols">
+      <div class="quiz-left">
+        <div class="map-wrap"><svg id="quiz-map" viewBox="0 0 1000 500" preserveAspectRatio="xMidYMid meet"></svg></div>
+      </div>
+      <div class="quiz-right">
+        <p id="prompt" class="prompt">Which one is highlighted?</p>
+        <div id="options" class="options"></div>
+        <form id="free-form" class="free-form hidden" autocomplete="off">
+          <input id="free-input" type="text" placeholder="Type the name…" autocapitalize="words" spellcheck="false">
+          <button type="submit" class="primary">Guess</button>
+          <button type="button" id="free-skip" class="ghost">Reveal</button>
+        </form>
+        <div id="reveal" class="reveal hidden"></div>
+      </div>
+    </div>
   </section>
 
   <!-- RESULTS -->

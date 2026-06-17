@@ -2,7 +2,9 @@
   --bg:#0e1726; --panel:#16223a; --panel2:#1e2f4d; --line:#2c4063;
   --ink:#e8eef7; --mut:#93a4c0; --acc:#3ea8ff; --acc2:#7c5cff;
   --ok:#34d399; --bad:#f87171; --hi:#ffd24a;
-  --land:#33486e; --land-sel:#2f5fa3; --target:#ff5a7a;
+  /* traditional map palette */
+  --ocean:#a9d6ea; --land:#e7ddc4; --land-line:#b9ab86;
+  --land-sel:#8fc1e6; --land-hover:#f2cf63; --target:#e0533d;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -17,7 +19,7 @@ h1{font-size:20px; margin:0; letter-spacing:.3px}
 #title{cursor:pointer; user-select:none}
 #hud{display:flex; gap:14px; align-items:center; flex-wrap:wrap; color:var(--mut); font-size:14px}
 .hud-item b{color:var(--ink)}
-main{flex:1; width:100%; max-width:860px; margin:0 auto; padding:20px; width:100%}
+main{flex:1; width:100%; max-width:1040px; margin:0 auto; padding:20px}
 .screen{animation:fade .25s ease}
 .hidden{display:none!important}
 @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1}}
@@ -41,21 +43,35 @@ h2{margin:.2em 0 .6em}
 .cont-btn.on{background:var(--acc); border-color:var(--acc); color:#06121f}
 .cont-btn:hover{border-color:var(--acc)}
 
-.map-wrap{background:#0b1322; border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.map-wrap{background:var(--ocean); border:1px solid var(--line); border-radius:14px; overflow:hidden}
 .map-wrap.small-map svg{height:300px}
 .map-wrap svg{display:block; width:100%; height:360px; touch-action:none}
-.country{fill:var(--land); stroke:#0b1322; stroke-width:.5; transition:fill .15s}
+.quiz-left .map-wrap svg{height:clamp(300px,54vh,540px)}
+.country{fill:var(--land); stroke:var(--land-line); stroke-width:.4; transition:fill .15s}
 .country.sel{fill:var(--land-sel)}
-.country.pick:hover{fill:var(--acc); cursor:pointer}
-.country.target{fill:var(--target); stroke:#fff; stroke-width:1; animation:targetpulse 1.3s ease-in-out infinite}
-@keyframes targetpulse{0%,100%{fill:#ff5a7a}50%{fill:#ff95ab}}
+.country.pick:hover{fill:var(--land-hover); cursor:pointer}
+.country.target{fill:var(--target); stroke:#7a241a; stroke-width:.8; animation:targetpulse 1.3s ease-in-out infinite}
+@keyframes targetpulse{0%,100%{fill:#e0533d}50%{fill:#f37a57}}
 .marker{fill:var(--target); stroke:#fff; stroke-width:1}
 .marker-ring{fill:none; stroke:var(--target); stroke-width:1.5; opacity:.8;
   animation:pulse 1.4s ease-out infinite}
 @keyframes pulse{0%{r:3; opacity:.9}100%{r:10; opacity:0}}
 
-.prompt{font-size:18px; font-weight:600; margin:16px 0 12px; text-align:center}
-.options{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+/* quiz two-column: map left, answers right (stacks on narrow screens) */
+.quiz-cols{display:grid; grid-template-columns:1.05fr .95fr; gap:18px; align-items:start}
+.quiz-left{position:sticky; top:10px}
+.quiz-right{min-width:0}
+@media(max-width:760px){ .quiz-cols{grid-template-columns:1fr} .quiz-left{position:static} }
+
+/* section toggle (World / US States) */
+.sec-toggle{display:inline-flex; gap:4px; background:var(--panel); border:1px solid var(--line);
+  border-radius:999px; padding:4px; margin-bottom:16px}
+.sec-btn{border:none; background:transparent; color:var(--mut); font-weight:700; font-size:14px;
+  padding:8px 18px; border-radius:999px; cursor:pointer}
+.sec-btn.on{background:var(--acc); color:#06121f}
+
+.prompt{font-size:18px; font-weight:600; margin:2px 0 14px; text-align:left}
+.options{display:grid; grid-template-columns:1fr; gap:10px}
 .opt{padding:14px; border-radius:12px; border:1px solid var(--line); background:var(--panel);
   color:var(--ink); cursor:pointer; font-size:15px; font-weight:600; transition:.12s}
 .opt:hover:not(:disabled){border-color:var(--acc); background:var(--panel2)}
