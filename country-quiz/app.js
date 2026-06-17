@@ -97,8 +97,8 @@ function viewBoxTarget(c){
     const bb=f.bb, bw=bb[2]-bb[0], bh=bb[3]-bb[1];
     if(bw>260){ cx=mx; cy=my; w=260; h=130; }          // huge/antimeridian spread (US/Russia/Fiji): frame on centroid
     else { cx=(bb[0]+bb[2])/2; cy=(bb[1]+bb[3])/2;
-           w=Math.max(bw*2.2,48); h=Math.max(bh*2.2,24); }
-  } else { cx=mx; cy=my; w=48; h=24; }                 // marker-only territory
+           w=Math.max(bw*2.2,84); h=Math.max(bh*2.2,42); }
+  } else { cx=mx; cy=my; w=84; h=42; }                 // marker-only territory
   if(w/h<2) w=h*2; else h=w/2;                          // match the ~2:1 svg box
   return [cx-w/2, cy-h/2, w, h].map(v=>v.toFixed(0)).join(' ');
 }
