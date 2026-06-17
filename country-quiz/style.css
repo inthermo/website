@@ -49,10 +49,10 @@ h2{margin:.2em 0 .6em}
 .country.pick:hover{fill:var(--acc); cursor:pointer}
 .country.target{fill:var(--target); stroke:#fff; stroke-width:1; animation:targetpulse 1.3s ease-in-out infinite}
 @keyframes targetpulse{0%,100%{fill:#ff5a7a}50%{fill:#ff95ab}}
-.marker{fill:var(--target); stroke:#fff; stroke-width:1.5}
+.marker{fill:var(--target); stroke:#fff; stroke-width:1}
 .marker-ring{fill:none; stroke:var(--target); stroke-width:1.5; opacity:.8;
   animation:pulse 1.4s ease-out infinite}
-@keyframes pulse{0%{r:4; opacity:.9}100%{r:26; opacity:0}}
+@keyframes pulse{0%{r:3; opacity:.9}100%{r:10; opacity:0}}
 
 .prompt{font-size:18px; font-weight:600; margin:16px 0 12px; text-align:center}
 .options{display:grid; grid-template-columns:1fr 1fr; gap:10px}
